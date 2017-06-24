@@ -1,12 +1,48 @@
-#include "cwiiuse.h"
+/*
+ *	wiiuse
+ *
+ *	Written By:
+ *		Michael Laforest	< para >
+ *		Email: < thepara (--AT--) g m a i l [--DOT--] com >
+ *
+ *	Copyright 2006-2007
+ *
+ *	This file is part of wiiuse.
+ *
+ *	This program is free software; you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; either version 3 of the License, or
+ *	(at your option) any later version.
+ *
+ *	This program is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *	$Header$
+ *
+ */
 
+/**
+ *	@file
+ *
+ *	@brief Example using the wiiuse API.
+ *
+ *	This file is an example of how to use the wiiuse library.
+ */
 
+#include <stdio.h>                      /* for printf */
 
+#include "wiiuse.h"                     /* for wiimote_t, classic_ctrl_t, etc */
 
+#ifndef WIIUSE_WIN32
+#include <unistd.h>                     /* for usleep */
+#endif
 
-
-void (*wii_onPressEvent)(char key)=NULL;
-
+#define MAX_WIIMOTES				4
 
 
 /**
@@ -23,47 +59,36 @@ void handle_event(struct wiimote_t* wm) {
 	/* if a button is pressed, report it */
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_A)) {
 		printf("A pressed\n");
-		wii_onPressEvent('A');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_B)) {
 		printf("B pressed\n");
-		wii_onPressEvent('B');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_UP)) {
 		printf("UP pressed\n");
-		wii_onPressEvent('U');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_DOWN))	{
 		printf("DOWN pressed\n");
-		wii_onPressEvent('D');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_LEFT))	{
 		printf("LEFT pressed\n");
-		wii_onPressEvent('L');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_RIGHT))	{
 		printf("RIGHT pressed\n");
-		wii_onPressEvent('R');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_MINUS))	{
 		printf("MINUS pressed\n");
-		wii_onPressEvent('M');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_PLUS))	{
 		printf("PLUS pressed\n");
-		wii_onPressEvent('P');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_ONE)) {
 		printf("ONE pressed\n");
-		wii_onPressEvent('1');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_TWO)) {
 		printf("TWO pressed\n");
-		wii_onPressEvent('2');
 	}
 	if (IS_PRESSED(wm, WIIMOTE_BUTTON_HOME))	{
 		printf("HOME pressed\n");
-		wii_onPressEvent('H');
 	}
 
 	/*
@@ -351,6 +376,11 @@ void handle_disconnect(wiimote* wm) {
 	printf("\n\n--- DISCONNECTED [wiimote id %i] ---\n", wm->unid);
 }
 
+
+void test(struct wiimote_t* wm, byte* data, unsigned short len) {
+	printf("test: %i [%x %x %x %x]\n", len, data[0], data[1], data[2], data[3]);
+}
+
 short any_wiimote_connected(wiimote** wm, int wiimotes) {
 	int i;
 	if (!wm) {
@@ -366,9 +396,108 @@ short any_wiimote_connected(wiimote** wm, int wiimotes) {
 	return 0;
 }
 
-void *wiithreadfunc(void *arg)
-{
-	//Cwiiuse::getInstance();
+
+/**
+ *	@brief main()
+ *
+ *	Connect to up to two wiimotes and print any events
+ *	that occur on either device.
+ */
+int main(int argc, char** argv) {
+	wiimote** wiimotes;
+	int found, connected;
+
+	/*
+	 *	Initialize an array of wiimote objects.
+	 *
+	 *	The parameter is the number of wiimotes I want to create.
+	 */
+	wiimotes =  wiiuse_init(MAX_WIIMOTES);
+
+	/*
+	 *	Find wiimote devices
+	 *
+	 *	Now we need to find some wiimotes.
+	 *	Give the function the wiimote array we created, and tell it there
+	 *	are MAX_WIIMOTES wiimotes we are interested in.
+	 *
+	 *	Set the timeout to be 5 seconds.
+	 *
+	 *	This will return the number of actual wiimotes that are in discovery mode.
+	 */
+	found = wiiuse_find(wiimotes, MAX_WIIMOTES, 5);
+	if (!found) {
+		printf("No wiimotes found.\n");
+		return 0;
+	}
+
+	/*
+	 *	Connect to the wiimotes
+	 *
+	 *	Now that we found some wiimotes, connect to them.
+	 *	Give the function the wiimote array and the number
+	 *	of wiimote devices we found.
+	 *
+	 *	This will return the number of established connections to the found wiimotes.
+	 */
+	connected = wiiuse_connect(wiimotes, MAX_WIIMOTES);
+	if (connected) {
+		printf("Connected to %i wiimotes (of %i found).\n", connected, found);
+	} else {
+		printf("Failed to connect to any wiimote.\n");
+		return 0;
+	}
+
+	/*
+	 *	Now set the LEDs and rumble for a second so it's easy
+	 *	to tell which wiimotes are connected (just like the wii does).
+	 */
+	wiiuse_set_leds(wiimotes[0], WIIMOTE_LED_1);
+	wiiuse_set_leds(wiimotes[1], WIIMOTE_LED_2);
+	wiiuse_set_leds(wiimotes[2], WIIMOTE_LED_3);
+	wiiuse_set_leds(wiimotes[3], WIIMOTE_LED_4);
+	wiiuse_rumble(wiimotes[0], 1);
+	wiiuse_rumble(wiimotes[1], 1);
+
+#ifndef WIIUSE_WIN32
+	usleep(200000);
+#else
+	Sleep(200);
+#endif
+
+	wiiuse_rumble(wiimotes[0], 0);
+	wiiuse_rumble(wiimotes[1], 0);
+
+	printf("\nControls:\n");
+	printf("\tB toggles rumble.\n");
+	printf("\t+ to start Wiimote accelerometer reporting, - to stop\n");
+	printf("\tUP to start IR camera (sensor bar mode), DOWN to stop.\n");
+	printf("\t1 to start Motion+ reporting, 2 to stop.\n");
+	printf("\n\n");
+
+	/*
+	 *	Maybe I'm interested in the battery power of the 0th
+	 *	wiimote.  This should be WIIMOTE_ID_1 but to be sure
+	 *	you can get the wiimote associated with WIIMOTE_ID_1
+	 *	using the wiiuse_get_by_id() function.
+	 *
+	 *	A status request will return other things too, like
+	 *	if any expansions are plugged into the wiimote or
+	 *	what LEDs are lit.
+	 */
+	/* wiiuse_status(wiimotes[0]); */
+
+	/*
+	 *	This is the main loop
+	 *
+	 *	wiiuse_poll() needs to be called with the wiimote array
+	 *	and the number of wiimote structures in that array
+	 *	(it doesn't matter if some of those wiimotes are not used
+	 *	or are not connected).
+	 *
+	 *	This function will set the event flag for each wiimote
+	 *	when the wiimote has things to report.
+	 */
 	while (any_wiimote_connected(wiimotes, MAX_WIIMOTES)) {
 		if (wiiuse_poll(wiimotes, MAX_WIIMOTES)) {
 			/*
@@ -449,122 +578,10 @@ void *wiithreadfunc(void *arg)
 		}
 	}
 
-}
-
-Cwiiuse::Cwiiuse()
-{
-
-}
-
-Cwiiuse::~Cwiiuse()
-{
-
-}
-
-Cwiiuse * Cwiiuse::getInstance()
-{
-	return modCwiiuse;
-}
-
-int Cwiiuse::init()
-{
 	/*
-	*	Initialize an array of wiimote objects.
-	*
-	*	The parameter is the number of wiimotes I want to create.
-	*/
-	wiimotes = wiiuse_init(MAX_WIIMOTES);
+	 *	Disconnect the wiimotes
+	 */
+	wiiuse_cleanup(wiimotes, MAX_WIIMOTES);
 
-	/*
-	*	Find wiimote devices
-	*
-	*	Now we need to find some wiimotes.
-	*	Give the function the wiimote array we created, and tell it there
-	*	are MAX_WIIMOTES wiimotes we are interested in.
-	*
-	*	Set the timeout to be 5 seconds.
-	*
-	*	This will return the number of actual wiimotes that are in discovery mode.
-	*/
-	found = wiiuse_find(wiimotes, MAX_WIIMOTES, 5);
-	if (!found) {
-		printf("No wiimotes found.\n");
-		return 0;
-	}
-
-	/*
-	*	Connect to the wiimotes
-	*
-	*	Now that we found some wiimotes, connect to them.
-	*	Give the function the wiimote array and the number
-	*	of wiimote devices we found.
-	*
-	*	This will return the number of established connections to the found wiimotes.
-	*/
-	connected = wiiuse_connect(wiimotes, MAX_WIIMOTES);
-	if (connected) {
-		printf("Connected to %i wiimotes (of %i found).\n", connected, found);
-	}
-	else {
-		printf("Failed to connect to any wiimote.\n");
-		return 0;
-	}
-
-	/*
-	*	Now set the LEDs and rumble for a second so it's easy
-	*	to tell which wiimotes are connected (just like the wii does).
-	*/
-	wiiuse_set_leds(wiimotes[0], WIIMOTE_LED_1);
-	wiiuse_set_leds(wiimotes[1], WIIMOTE_LED_2);
-	wiiuse_set_leds(wiimotes[2], WIIMOTE_LED_3);
-	wiiuse_set_leds(wiimotes[3], WIIMOTE_LED_4);
-	wiiuse_rumble(wiimotes[0], 1);
-	wiiuse_rumble(wiimotes[1], 1);
-
-#ifndef WIIUSE_WIN32
-	usleep(200000);
-#else
-	Sleep(200);
-#endif
-
-	wiiuse_rumble(wiimotes[0], 0);
-	wiiuse_rumble(wiimotes[1], 0);
-
-	printf("\nControls:\n");
-	printf("\tB toggles rumble.\n");
-	printf("\t+ to start Wiimote accelerometer reporting, - to stop\n");
-	printf("\tUP to start IR camera (sensor bar mode), DOWN to stop.\n");
-	printf("\t1 to start Motion+ reporting, 2 to stop.\n");
-	printf("\n\n");
-}
-
-int Cwiiuse::start()
-{
-
-	int err;
-	err = pthread_create(&wii_thread, NULL, wiithreadfunc, NULL); //创建线程
-	if (err!=0)
-	{
-		printf("create wii_thread error\n ");
-		return -1;
-	}
-	printf("wii_thread created!");
 	return 0;
-}
-
-
-
-void Cwiiuse::setRumble(int msec )
-{
-	wiiuse_rumble(wiimotes[0], 1);
-	wiiuse_rumble(wiimotes[1], 1);
-
-#ifndef WIIUSE_WIN32
-	usleep(msec*1000);
-#else
-	Sleep(msec);
-#endif
-
-	wiiuse_rumble(wiimotes[0], 0);
-	wiiuse_rumble(wiimotes[1], 0);
 }

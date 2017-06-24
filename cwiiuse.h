@@ -9,10 +9,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <iostream>
-
+#define MAX_WIIMOTES				4
 pthread_t wii_thread;
 
-
+extern void (*wii_onPressEvent)(char key);
+//extern void wii_onPressCall(char key);
 
 Cwiiuse *modCwiiuse;
 
@@ -31,6 +32,7 @@ public:
 
 	void getAction();
 	void setAction();
+	void setRumble(int msec);
 private:
 
 
