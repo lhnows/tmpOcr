@@ -32,7 +32,7 @@ using namespace rs;
 // realsense ocr recog code up:
 // realsense ocr recog code up:
 
-
+#include "cwiiuse.h"
 
 
 #include <stdio.h>                      /* for printf */
@@ -46,6 +46,8 @@ using namespace rs;
 #define MAX_WIIMOTES				4
 
 
+
+#if 0
 /**
  *	@brief Callback that handles an event.
  *
@@ -598,7 +600,7 @@ int mainwii(int argc, char** argv) {
 
 	return 0;
 }
-
+#endif
 
 
 // realsense ocr recog code blow:
@@ -796,15 +798,16 @@ void *funcSound(void *arg)
 			{
 				strSpe[i] = "espeak " + textStrSrc[i];
 			}
-
+			system("espeak ding");
+			imshow("read img", readimg);
+#if 0
 			wiiuse_rumble(wiimotes[0], 1);
 			wiiuse_rumble(wiimotes[1], 1);
 			usleep(200000);
 			wiiuse_rumble(wiimotes[0], 0);
 			wiiuse_rumble(wiimotes[1], 0);
 
-			system("espeak ding");
-			imshow("read img", readimg);
+			
 
 			for (int j = 0; j < 10; j++)
 			{
@@ -885,7 +888,7 @@ void *funcSound(void *arg)
 				}
 				usleep(300000);
 			}
-
+#endif
 			//usleep(3000000);
 //int kk = waitKey(3000);//
 			if (mouseRead == 1)
@@ -898,11 +901,6 @@ void *funcSound(void *arg)
 				mouseRead = 0;
 				continue;
 			}
-
-
-
-
-
 		}
 
 		//string str = "espeak ";
@@ -913,12 +911,33 @@ void *funcSound(void *arg)
 	return ((void *)0);
 }
 
+void *wii_loop(void *arg)
+{
+	while(1)
+	{
+		printf("The Action Key is %c \n",Cwiiuse::getInstance()->getAction(5000));
+
+	}
+}
+
 pthread_t main_tid;
+pthread_t wii_loop_tid;
 //Perform text detection and recognition from webcam
 int main(int argc, char* argv[])
 {
 
+	Cwiiuse::getInstance()->start();
 
+
+	int err;
+	err = pthread_create(&wii_loop_tid, NULL, wii_loop, NULL); //ŽŽœšÏß³Ì
+	if (err!=0)
+	{
+		printf("create wii_loop_thread error\n ");
+		return -1;
+	}
+
+#if 0
 	////// start wii :
 	////// start wii :
 	////// start wii :
@@ -977,11 +996,11 @@ int main(int argc, char* argv[])
 	wiiuse_rumble(wiimotes[0], 1);
 	wiiuse_rumble(wiimotes[1], 1);
 
-#ifndef WIIUSE_WIN32
+	#ifndef WIIUSE_WIN32
 	usleep(200000);
-#else
+	#else
 	Sleep(200);
-#endif
+	#endif
 
 	wiiuse_rumble(wiimotes[0], 0);
 	wiiuse_rumble(wiimotes[1], 0);
@@ -994,13 +1013,13 @@ int main(int argc, char* argv[])
 	printf("\n\n");
 
 
-
+#endif
 
 
 	//////start ocr
 
 
-
+	
 
 
 	//create sound thread
@@ -1012,9 +1031,11 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 	*/
+
+	
 	cout << endl << argv[0] << endl << endl;
-	cout << "A demo program of End-to-end Scene Text Detection and Recognition using webcam." << endl << endl;
-	cout << "  Usage:  " << argv[0] << " [camera_index]" << endl << endl;
+	cout << "A demo program of End-to-end Scene Text Detection and Recognition using realsense." << endl << endl;
+	cout << "  Usage:  " << argv[0] << endl << endl;
 	cout << "  Press 'r' to switch between MSER/CSER regions." << endl;
 	cout << "  Press 'g' to switch between Horizontal and Arbitrary oriented grouping." << endl;
 	cout << "  Press 'o' to switch between OCRTesseract/OCRHMMDecoder recognition." << endl;

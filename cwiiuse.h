@@ -9,13 +9,18 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <iostream>
-#define MAX_WIIMOTES				4
-pthread_t wii_thread;
+#include "wiiuse.h"                     /* for wiimote_t, classic_ctrl_t, etc */
 
-extern void (*wii_onPressEvent)(char key);
+#ifndef WIIUSE_WIN32
+#include <unistd.h>                     /* for usleep */
+#endif
+#define MAX_WIIMOTES				4
+
+
+//extern void (*wii_onPressEvent)(char key);
 //extern void wii_onPressCall(char key);
 
-Cwiiuse *modCwiiuse;
+
 
 class Cwiiuse {
 public:
@@ -26,20 +31,20 @@ public:
 	wiimote** wiimotes;
 	int found, connected;
 
-	Cwiiuse *getInstance();
+	static Cwiiuse *getInstance();
 	int init();
 	int start();
-
-	void getAction();
-	void setAction();
+	char action;
+	char getAction();
+	void setAction(char key);
+	char getAction(int msec);
 	void setRumble(int msec);
 private:
 
 
-
-
-
 };
+
+
 
 
 #endif

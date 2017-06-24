@@ -5,10 +5,15 @@
 
 
 
-void (*wii_onPressEvent)(char key)=NULL;
+//void (*wii_onPressEvent)(char key)=NULL;
 
+void wii_onPressEvent(char key)
+{
+	Cwiiuse::getInstance()->setAction(key);
+}
 
-
+Cwiiuse *modCwiiuse=NULL;
+pthread_t wii_thread;
 /**
  *	@brief Callback that handles an event.
  *
@@ -368,7 +373,7 @@ short any_wiimote_connected(wiimote** wm, int wiimotes) {
 
 void *wiithreadfunc(void *arg)
 {
-	//Cwiiuse::getInstance();
+	wiimote** wiimotes  = Cwiiuse::getInstance()->wiimotes;
 	while (any_wiimote_connected(wiimotes, MAX_WIIMOTES)) {
 		if (wiiuse_poll(wiimotes, MAX_WIIMOTES)) {
 			/*
@@ -463,11 +468,17 @@ Cwiiuse::~Cwiiuse()
 
 Cwiiuse * Cwiiuse::getInstance()
 {
+	if(modCwiiuse ==NULL)
+	{
+		modCwiiuse = new Cwiiuse();
+		modCwiiuse->init();
+	}
 	return modCwiiuse;
 }
 
 int Cwiiuse::init()
 {
+	action = 'Z';
 	/*
 	*	Initialize an array of wiimote objects.
 	*
@@ -550,6 +561,39 @@ int Cwiiuse::start()
 	}
 	printf("wii_thread created!");
 	return 0;
+}
+
+char Cwiiuse::getAction()
+{
+	char akey = action;
+	action = 'Z';
+	return akey;
+}
+
+void Cwiiuse::setAction(char key)
+{
+	action = key;
+}
+
+
+char Cwiiuse::getAction(int msec)
+{
+	getAction();
+	int metamsec = 100;
+	char akey='Z';
+	for(int i =0; i*metamsec <msec ; i++ )
+	{
+#ifndef WIIUSE_WIN32
+		usleep(metamsec*1000);
+#else
+		Sleep(metamsec);
+#endif
+		akey = getAction();
+		if('Z' != akey )
+			return akey;
+
+	}
+	return akey;
 }
 
 
