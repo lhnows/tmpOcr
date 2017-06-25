@@ -15,7 +15,7 @@
 #include <unistd.h>                     /* for usleep */
 #endif
 #define MAX_WIIMOTES				4
-
+ 
 
 //extern void (*wii_onPressEvent)(char key);
 //extern void wii_onPressCall(char key);
@@ -35,9 +35,15 @@ public:
 	int init();
 	int start();
 	char action;
+	char action1;
+	char action2;
 	char getAction();
+	char getAction1();
+	char getAction2();
 	void setAction(char key);
 	char getAction(int msec);
+	char getAction1(int msec);
+	char getAction2(int msec);
 	void setRumble(int msec);
 private:
 

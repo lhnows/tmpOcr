@@ -58,7 +58,7 @@ endif()
 find_package(OpenCV REQUIRED)
 
 INCLUDE_DIRECTORIES(./)
-ADD_EXECUTABLE(VisionSpeekDemo  main.cpp cwiiuse.cpp )
+ADD_EXECUTABLE(VisionSpeekDemo  main.cpp cwiiuse.cpp ocrui.cpp)
 
 
 FIND_PACKAGE(OpenCV REQUIRED)

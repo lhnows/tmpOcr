@@ -479,6 +479,8 @@ Cwiiuse * Cwiiuse::getInstance()
 int Cwiiuse::init()
 {
 	action = 'Z';
+	action1 = 'Z';
+	action2 = 'Z';
 	/*
 	*	Initialize an array of wiimote objects.
 	*
@@ -553,7 +555,7 @@ int Cwiiuse::start()
 {
 
 	int err;
-	err = pthread_create(&wii_thread, NULL, wiithreadfunc, NULL); //´´½¨Ïß³Ì
+	err = pthread_create(&wii_thread, NULL, wiithreadfunc, NULL); //ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½
 	if (err!=0)
 	{
 		printf("create wii_thread error\n ");
@@ -570,9 +572,25 @@ char Cwiiuse::getAction()
 	return akey;
 }
 
+char Cwiiuse::getAction1()
+{
+	char akey = action1;
+	action1 = 'Z';
+	return akey;
+}
+
+char Cwiiuse::getAction2()
+{
+	char akey = action2;
+	action2 = 'Z';
+	return akey;
+}
+
 void Cwiiuse::setAction(char key)
 {
 	action = key;
+	action1 = key;
+	action2 = key;
 }
 
 
@@ -589,6 +607,46 @@ char Cwiiuse::getAction(int msec)
 		Sleep(metamsec);
 #endif
 		akey = getAction();
+		if('Z' != akey )
+			return akey;
+
+	}
+	return akey;
+}
+
+char Cwiiuse::getAction1(int msec)
+{
+	getAction1();
+	int metamsec = 100;
+	char akey='Z';
+	for(int i =0; i*metamsec <msec ; i++ )
+	{
+#ifndef WIIUSE_WIN32
+		usleep(metamsec*1000);
+#else
+		Sleep(metamsec);
+#endif
+		akey = getAction1();
+		if('Z' != akey )
+			return akey;
+
+	}
+	return akey;
+}
+
+char Cwiiuse::getAction2(int msec)
+{
+	getAction2();
+	int metamsec = 100;
+	char akey='Z';
+	for(int i =0; i*metamsec <msec ; i++ )
+	{
+#ifndef WIIUSE_WIN32
+		usleep(metamsec*1000);
+#else
+		Sleep(metamsec);
+#endif
+		akey = getAction2();
 		if('Z' != akey )
 			return akey;
 
