@@ -85,12 +85,14 @@ public:
 public:
 	static OcrUI *getInstance();
 	void setRumbleOrSound(int _isRumble);
-	void recg_attention();
-
+	void recg1_attention();
+	void recg2_1_attention();
+	void recg2_0_attention();
 	void process(DtArray &_dta);
 	DtA_Array mdta_arr;
 	
 	int frameCount;
+	int textFrameCount;
 private:
 	int isRumble;
 	DtArray mReadDtArr;

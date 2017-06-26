@@ -30,7 +30,7 @@ void OcrUI::setRumbleOrSound(int _isRumble)
     isRumble = _isRumble;
 }
 
-void OcrUI::recg_attention()
+void OcrUI::recg1_attention()
 {
 	if (1==isRumble)
 		Cwiiuse::getInstance()->setRumble(200);
@@ -38,25 +38,55 @@ void OcrUI::recg_attention()
 		system("espeak attention");
 }
 
+void OcrUI::recg2_1_attention()
+{
+	if (1 == isRumble)
+		Cwiiuse::getInstance()->setRumble(1000);
+	else
+		system("espeak output");
+}
+
+void OcrUI::recg2_0_attention()
+{
+	if (1 == isRumble)
+	{
+		Cwiiuse::getInstance()->setRumble(200);
+		usleep(200000);
+		Cwiiuse::getInstance()->setRumble(200);
+	}
+	else
+		system("espeak move");
+}
+
 void OcrUI::process(DtArray &_dta)
 {
     if(0==_dta.count && mdta_arr.isClear==1) return;
     if(mdta_arr.isClear==1)
     {
-        recg_attention();
+		textFrameCount = 0;
+        recg1_attention();
         char key = Cwiiuse::getInstance()->getAction1(2000);
         if('A'!=key) return;
     }
     if(TEXT_FRAME == frameCount)
     {
-        Cwiiuse::getInstance()->setRumble(1000);
-        char key = Cwiiuse::getInstance()->getAction1(2000);
-        if('A'==key)
-        {
-			readDtArr();
-        }
+		if (textFrameCount >= TEXT_FRAME/2)
+		{
+			recg2_1_attention();
+			char key = Cwiiuse::getInstance()->getAction1(2000);
+			if ('A' == key)
+			{
+				readDtArr();
+			}
+		}
+		else
+		{
+			recg2_0_attention();
+		}
+        
         mdta_arr.reset();
         frameCount=0;
+		textFrameCount = 0;
         return;
     }
     mdta_arr.add(_dta);
@@ -65,9 +95,9 @@ void OcrUI::process(DtArray &_dta)
     //----
     if(0!=_dta.count)
     {
+		textFrameCount++;
         mReadDtArr.set(_dta);
     }
-
 }
 
 void OcrUI::readDtArr()
